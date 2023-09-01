@@ -61,7 +61,7 @@ export const loginUser = asyncHandler(async (req, res) => {
   });
 });
 
-//handle refresh token
+//GET handle refresh token
 export const handleRefreshToken = asyncHandler(async (req, res) => {
   const cookie = req.cookies;
   if (!cookie?.refreshToken) throw new Error("No Refresh Token In Cookies");
@@ -77,6 +77,23 @@ export const handleRefreshToken = asyncHandler(async (req, res) => {
   });
 });
 
+//GET logout
+export const logout = asyncHandler(async (req, res) => {
+  const cookie = req.cookies;
+  if (!cookie?.refreshToken) throw new Error("No Refresh Token In Cookies");
+  const refreshToken = cookie.refreshToken;
+  const user = await User.findOne({ refreshToken });
+  if (!user) {
+    res.clearCookie("refreshToken",{httpOnly:true, secure:true});
+    return res.sendStatus(204);
+  }
+  await User.findOneAndUpdate(refreshToken,{refreshToken:""})
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: true,
+  });
+  res.sendStatus(204);
+});
 
 //GET get all users
 export const getUsers = asyncHandler(async (req, res) => {
