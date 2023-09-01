@@ -2,8 +2,11 @@ import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
 import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
 import { createServer } from "http";
 import connectDB from "./config/db.js";
+import userRoutes from './routes/authRoutes.js';
+import { notFound,errorHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
 const server = createServer(app);
@@ -12,11 +15,18 @@ connectDB();
 app.use(bodyParser.json({ limit: "50mb", extended: true }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 app.use(cors());
+app.use(cookieParser());
 
 //Routes
+app.use('/api/user',userRoutes)
+
+
 app.use("/", (req, res) => {
   res.send("HELLOOOO")
 });
+
+app.use(notFound)
+app.use(errorHandler)
 
 
 
