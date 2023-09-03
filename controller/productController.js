@@ -38,7 +38,7 @@ export const getProducts = asyncHandler(async (req, res) => {
     //Sorting
     if (req.query.sort) {
       const sortBy = req.query.sort.split(",").join(" ");
-      query.sort(sortBy)
+      query.sort(sortBy);
     } else {
       query = query.sort("-createdAt");
     }
@@ -52,8 +52,16 @@ export const getProducts = asyncHandler(async (req, res) => {
     }
 
     //pagination
-
+    const page = req.query.page;
+    const limit = req.query.limit;
+    const skip = (page - 1) * limit;
+    if (req.query.page) {
+      const productCount = await Product.countDocuments();
+      if (skip >= productCount) throw new Error("This Page does not exists");
+    }
+    const product = await query
+    res.json(product)
   } catch (error) {
-    throw new Error(error)
+    throw new Error(error);
   }
 });
