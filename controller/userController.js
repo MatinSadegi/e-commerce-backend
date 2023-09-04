@@ -116,3 +116,4 @@ export const getUser = asyncHandler(async (req, res) => {
     throw new Error(error);
   }
 });
+
