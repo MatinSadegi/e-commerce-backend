@@ -2,15 +2,48 @@ import slugify from "slugify";
 import Product from "../models/productModel.js";
 import asyncHandler from "express-async-handler";
 import { validateMongoDbId } from "../utils/validateMongodbId.js";
+import cloudinary from "../utils/cloudinary.js";
 
 //POST create product
 export const createProduct = asyncHandler(async (req, res) => {
-  if (req.body.title) {
-    req.body.slug = slugify(req.body.title);
+  const {
+    title,
+    imageUrl,
+    category,
+    subcategory,
+    price,
+    description,
+    inventory,
+    quantity,
+  } = req.body;
+  if (title) {
+    req.body.slug = slugify(title);
   }
-  const newProduct = await Product.create(req.body);
-  res.json(newProduct);
-});
+   
+  try {
+    const result = await cloudinary.uploader.upload(imageUrl, {
+      folder: 'products',
+    });
+    console.log(result)  
+    const newProduct = await Product.create({
+      title,
+      category,  
+      subcategory,
+      price,
+      description,
+      inventory,
+      quantity, 
+      image: {
+        public_id: result.public_id,
+        url: result.secure_url,
+      },
+      slug:req.body.slug
+    });
+    res.json(newProduct);
+  } catch (error) {
+    console.log(error);
+  }
+}); 
 
 //GET get product
 export const getProduct = asyncHandler(async (req, res) => {
@@ -59,8 +92,8 @@ export const getProducts = asyncHandler(async (req, res) => {
       const productCount = await Product.countDocuments();
       if (skip >= productCount) throw new Error("This Page does not exists");
     }
-    const product = await query
-    res.json(product)
+    const product = await query;
+    res.json(product);
   } catch (error) {
     throw new Error(error);
   }
