@@ -4,9 +4,9 @@ import {
   getUsers,
   loginUser,
   getUser,
-  handleRefreshToken,
   logout,
 } from "../controller/userController.js";
+import { handleRefreshToken } from "../controller/refreshTokenController.js";
 import { protect, isAdmin } from "../middlewares/authMiddleware.js";
 const router = express.Router();
 
