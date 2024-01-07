@@ -10,6 +10,7 @@ import userRoutes from "./routes/authRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import blogRoutes from "./routes/blogRoutes.js";
 import attributesRoutes from "./routes/attributesRoutes.js";
+import cartRoutes from './routes/cartRoutes.js'
 import { notFound, errorHandler } from "./middlewares/errorHandler.js";
 const app = express();
 
@@ -26,6 +27,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/product", productRoutes);
 app.use("/api/blog", blogRoutes);
 app.use("/api/attributes", attributesRoutes);
+app.use("/api/cart", cartRoutes);
 
 app.use("/", (req, res) => {
   res.send("HELLOOOO");
