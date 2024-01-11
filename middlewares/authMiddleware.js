@@ -21,7 +21,7 @@ export const protect = asyncHandler(async (req, res, next) => {
     throw new Error("Not Authorized token expired , Please Login again");
   }
 });
-
+ 
 export const isAdmin = asyncHandler(async (req, res, next) => {
   const user = req.user;
   const adminUser = await User.findById({ user });

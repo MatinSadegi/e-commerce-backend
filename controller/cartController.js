@@ -52,3 +52,11 @@ export const addToCart = asyncHandler(async (req, res) => {
     throw new Error(error);
   }
 });
+
+//GET get user cart
+export const getCart = asyncHandler(async (req, res) => {
+  const { _id } = req.userId;
+  const cart = await User.findById(_id).populate("cart");
+  const populatedCart = await cart.cart.populate('products.product')
+  res.json(populatedCart);
+});
