@@ -57,6 +57,25 @@ export const addToCart = asyncHandler(async (req, res) => {
 export const getCart = asyncHandler(async (req, res) => {
   const { _id } = req.userId;
   const cart = await User.findById(_id).populate("cart");
-  const populatedCart = await cart.cart.populate('products.product')
+  const populatedCart = await cart.cart.populate("products.product");
   res.json(populatedCart);
+});
+
+//POST remove product from  cart
+export const removeFromCart = asyncHandler(async (req, res) => {
+  const { _id } = req.userId;
+  const { id } = req.body;
+  const cart = await Cart.findOne({ orderby: _id });
+  const currentProduct = cart.products.filter(
+    (item) => item._id.toString() === id
+  )[0];
+  const { price } = await Product.findById(currentProduct.product);
+  const newCart = await Cart.updateOne(
+    { orderby: _id },
+    {
+      $set: { cartTotal: cart.cartTotal - price * currentProduct.count },
+      $pull: { products: currentProduct },
+    }
+  );
+  res.send(newCart);
 });
