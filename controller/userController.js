@@ -40,9 +40,9 @@ export const loginUser = asyncHandler(async (req, res) => {
   setCookie(foundUser._id, res);
   await foundUser.save();
   const existCart = await Cart.find({ orderby: foundUser._id });
-  console.log(existCart)
   let quantity = 0;
   const sessionCart = req.session.cart;
+
   if (sessionCart) {
     if (existCart.length) {
       for (let i = 0; i < existCart[0].products.length; i++) {
@@ -51,6 +51,7 @@ export const loginUser = asyncHandler(async (req, res) => {
             item.productId === existCart[0].products[i].product.toString() &&
             existCart[0].products[i].size === item.size
           ) {
+            quantity++;
             await Cart.updateOne(
               {
                 $and: [
@@ -66,37 +67,34 @@ export const loginUser = asyncHandler(async (req, res) => {
                 },
               }
             );
-            quantity++;
           }
-          if (quantity === 0) {
-            console.log(
-              item.productId === existCart[0].products[i].product.toString(),
-              existCart[0].products[i].size === item.size
-            );
-            await Cart.updateOne(
-              {
-                $and: [
-                  {
-                    orderby: existCart[0].orderby,
-                    "products.product": existCart[0].products[i].product,
-                  },
-                ],
-              },
-              {
-                $push: {
-                  products: {
-                    count: item.count,
-                    size: item.size,
-                    title: item.title,
-                    price: item.price,
-                    image: item.image,
-                    product: item.productId,
-                  },
-                },
-              }
-            );
-          }
+          console.log(quantity);
         });
+      }
+      if (quantity === 0) {
+        console.log(quantity);
+        await Cart.updateOne(
+          {
+            $and: [
+              {
+                orderby: existCart[0].orderby,
+                "products.product": existCart[0].products[i].product,
+              },
+            ],
+          },
+          {
+            $push: {
+              products: {
+                count: item.count,
+                size: item.size,
+                title: item.title,
+                price: item.price,
+                image: item.image,
+                product: item.productId,
+              },
+            },
+          }
+        );
       }
       await Cart.updateOne(
         { orderby: foundUser._id },
@@ -108,14 +106,18 @@ export const loginUser = asyncHandler(async (req, res) => {
         }
       );
       req.session.destroy();
-    }else{
+    } else {
       const newCart = await Cart.create({
         products: sessionCart.products,
         cartTotal: sessionCart.cartTotal,
         countTotal: sessionCart.countTotal,
         orderby: foundUser._id,
       });
-      await User.updateOne({ _id: foundUser._id }, { $set: { cart: newCart._id } });
+      await User.updateOne(
+        { _id: foundUser._id },
+        { $set: { cart: newCart._id } }
+      );
+      req.session.destroy();
     }
   }
   res.status(200).json({
@@ -130,12 +132,14 @@ export const loginUser = asyncHandler(async (req, res) => {
 
 //GET get user Profile
 export const getUserProfile = asyncHandler(async (req, res) => {
-  const { _id } = req.userId;
-  const user = await User.findById(_id);
+  const user = req.userId;
+
   if (!user) {
     res.status(404).json("please login");
+  } else {
+    const userFound = await User.findById(user._id);
+    res.json(userFound);
   }
-  res.json(user);
 });
 
 //GET logout

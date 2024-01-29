@@ -69,8 +69,8 @@ export const addToCart = asyncHandler(async (req, res) => {
                 },
               }
             );
+            quantity++;
           }
-          quantity++;
         }
         if (quantity === 0) {
           await Cart.updateOne(
@@ -116,7 +116,6 @@ export const getCart = asyncHandler(async (req, res) => {
       }
     } else {
       const cart = await User.findById(user).populate("cart");
-      console.log("first", cart);
       if (!cart) {
         res.status(201).send("no product in cart");
       } else {

@@ -1,21 +1,16 @@
 import jwt from "jsonwebtoken";
 import asyncHandler from "express-async-handler";
 import User from "../models/userModel.js";
-import { parseCookies } from "../utils/parseCookies.js";
 
 export const protect = asyncHandler(async (req, res, next) => {
-  const accessToken = req.cookies;
-  const parsedCookie = parseCookies(req);
-  let token;
-  token = parsedCookie.accessToken;
+  const accessToken = req.cookies.accessToken;
   if (!accessToken) {
     res.status(401).send({ message: "Not authorized, no token" });
     return;
   }
   try {
-    const decodedData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    const decodedData = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
     const user = await User.findById(decodedData?.id);
-    console.log(user);
     req.userId = user?._id;
     next();
   } catch (error) {
@@ -29,7 +24,6 @@ export const checkUser = asyncHandler(async (req, res, next) => {
        req.cookies.accessToken,
        process.env.ACCESS_TOKEN_SECRET
      );
-     console.log(decodedData);
      if (decodedData) {
        user = await User.findById(decodedData?.id);
         req.userId = user?._id;
