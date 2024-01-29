@@ -11,6 +11,12 @@ const cartSchema = new mongoose.Schema(
         },
         count: { type: Number, required: true },
         size: { type: String, required: true },
+        image: {
+          public_id: String,
+          url: String,
+        },
+        title: { type: String, required: true },
+        price: { type: String, required: true },
       },
     ],
     orderby: {
@@ -18,6 +24,7 @@ const cartSchema = new mongoose.Schema(
       ref: "User",
     },
     cartTotal: { type: Number },
+    countTotal: { type: Number },
   },
   {
     timestamps: true,

@@ -1,4 +1,5 @@
 import asyncHandler from "express-async-handler";
+import jwt from "jsonwebtoken";
 import Cart from "../models/cartModel.js";
 import Product from "../models/productModel.js";
 import { validateMongoDbId } from "../utils/validateMongodbId.js";
@@ -6,59 +7,126 @@ import User from "../models/userModel.js";
 
 export const addToCart = asyncHandler(async (req, res) => {
   const { id, size, count } = req.body;
-  const { _id } = req.userId;
-  validateMongoDbId(_id);
-  try {
-    const user = await User.findById(_id);
-    let products = [];
-    const { price, title } = await Product.findById(id);
-    const alreadyExistCart = await Cart.findOne({ orderby: _id });
-    if (alreadyExistCart) {
-      const cartTotal = alreadyExistCart.cartTotal;
-      const alreadyExistProduct = await Cart.find({
-        $and: [{ orderby: _id }, { "products.product": id }],
-      });
-
-      if (alreadyExistProduct.length) {
-        await Cart.updateOne(
-          { orderby: _id, "products.product": id },
-          {
-            $inc: { "products.$.count": count },
-            $set: { cartTotal: cartTotal + price * count },
-          }
-        );
-        res.json("the user cart has been updated");
-      } else {
-        await Cart.updateOne(
-          { orderby: _id },
-          {
-            $push: { products: { product: id, count, size } },
-            $set: { cartTotal: cartTotal + price * count },
-          }
-        );
-        res.json(`${title} has been added to the user's cart`);
+  const { price, title, image } = await Product.findById(id);
+  const user = req.userId;
+  let quantity = 0;
+  if (!user) {
+    if (req.session.cart) {
+      for (let i = 0; i < req.session.cart.products.length; i++) {
+        if (
+          req.session.cart.products[i].productId === id &&
+          req.session.cart.products[i].size === size
+        ) {
+          req.session.cart.products[i].count += count;
+          req.session.cart.cartTotal += count * price;
+          req.session.cart.countTotal += count;
+          quantity++;
+        }
+      }
+      if (quantity === 0) {
+        req.session.cart.products.push({
+          productId: id,
+          size,
+          count,
+          image,
+          title,
+          price,
+        });
+        req.session.cart.cartTotal += count * price;
+        req.session.cart.countTotal += count;
       }
     } else {
-      products.push({ product: id, count, size });
-      const newCart = await Cart.create({
-        products,
-        cartTotal: price * count,
-        orderby: user?._id,
-      });
-      await User.updateOne({ _id }, { $set: { cart: newCart._id } });
-      res.json("the product has been added to the user cart");
+      req.session.cart = {
+        products: [{ productId: id, size, count, image, title, price }],
+        cartTotal: count * price,
+        countTotal: count,
+      };
     }
-  } catch (error) {
-    throw new Error(error);
+    res.status(200).json(req.session.cart.cartTotal);
+  } else {
+    try {
+      const alreadyExistCart = await Cart.findOne({ orderby: user });
+      if (alreadyExistCart) {
+        for (let i = 0; i < alreadyExistCart.products.length; i++) {
+          if (
+            alreadyExistCart.products[i].product.toString() === id &&
+            alreadyExistCart.products[i].size === size
+          ) {
+            await Cart.updateOne(
+              {
+                $and: [
+                  {
+                    orderby: user,
+                    "products.product": alreadyExistCart.products[i].product,
+                  },
+                ],
+              },
+              {
+                $inc: {
+                  "products.$.count": count,
+                  countTotal: count,
+                  cartTotal: price * count,
+                },
+              }
+            );
+          }
+          quantity++;
+        }
+        if (quantity === 0) {
+          await Cart.updateOne(
+            { orderby: user },
+            {
+              $push: {
+                products: { product: id, count, size, title, image, price },
+              },
+              $inc: { cartTotal: price * count, countTotal: count },
+            }
+          );
+        }
+      } else {
+        const newCart = await Cart.create({
+          products: { product: id, count, size, title, image, price },
+          cartTotal: price * count,
+          countTotal: count,
+          orderby: user,
+        });
+        await User.updateOne({ _id: user }, { $set: { cart: newCart._id } });
+      }
+      res.status(201).send(`${title} added to carts`);
+    } catch (error) {
+      throw new Error(error);
+    }
   }
 });
 
 //GET get user cart
 export const getCart = asyncHandler(async (req, res) => {
-  const { _id } = req.userId;
-  const cart = await User.findById(_id).populate("cart");
-  const populatedCart = await cart.cart.populate("products.product");
-  res.json(populatedCart);
+  const user = req.userId;
+  try {
+    if (!user) {
+      const sessionCart = req.session.cart;
+      if (sessionCart) {
+        res.status(201).json({
+          products: sessionCart.products,
+          cartTotal: sessionCart.cartTotal,
+          countTotal: sessionCart.countTotal,
+        });
+      } else {
+        res.status(201).send("no product in cart");
+      }
+    } else {
+      const cart = await User.findById(user).populate("cart");
+      console.log("first", cart);
+      if (!cart) {
+        res.status(201).send("no product in cart");
+      } else {
+        const populatedCart = cart.cart;
+        res.json(populatedCart);
+      }
+    }
+  } catch (error) {
+    throw new Error(error);
+  }
 });
 
 //POST remove product from  cart

@@ -1,94 +1,155 @@
 import asyncHandler from "express-async-handler";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import User from "../models/userModel.js";
 import { generateToken } from "../utils/generateToken.js";
 import { validateMongoDbId } from "../utils/validateMongodbId.js";
 import { generateRefreshToken } from "../utils/refreshToken.js";
+import { setCookie } from "../utils/setCookie.js";
+import Cart from "../models/cartModel.js";
 
 //POST create user
 export const createUser = asyncHandler(async (req, res) => {
-  const { firstName, lastName, phoneNumber, email, password } = req.body;
+  const { name, email, password } = req.body;
   const findUser = await User.findOne({ email });
   if (findUser) {
-    // return res.status(400).json({ msg: "User Already Exists", success: false });
     throw new Error("User Already Exists");
   }
   const hashedPassword = bcrypt.hashSync(password, 12);
   await User.create({
-    firstName,
-    lastName,
-    phoneNumber,
+    name,
     email,
     password: hashedPassword,
   });
+
   res.status(200).json({ message: "Account created" });
 });
 
 //POST login user
 export const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  const findUser = await User.findOne({ email });
-  if (!findUser) {
+  const foundUser = await User.findOne({ email });
+  if (!foundUser) {
     throw new Error("User Not Found");
   }
-  const validPassword = await bcrypt.compare(password, findUser.password);
+  const validPassword = await bcrypt.compare(password, foundUser.password);
   if (!validPassword) {
     throw new Error("invalid password");
   }
-  const refreshToken = generateRefreshToken(findUser?._id);
-  const updateUser = await User.findByIdAndUpdate(
-    findUser.id,
-    {
-      refreshToken,
-    },
-    { new: true }
-  );
-  res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    maxAge: 72 * 60 * 60 * 1000,
-  });
+  const newRefreshToken = generateRefreshToken(foundUser?._id);
+  foundUser.refreshToken = newRefreshToken;
+  setCookie(foundUser._id, res);
+  await foundUser.save();
+  const existCart = await Cart.find({ orderby: foundUser._id });
+  console.log(existCart)
+  let quantity = 0;
+  const sessionCart = req.session.cart;
+  if (sessionCart) {
+    if (existCart.length) {
+      for (let i = 0; i < existCart[0].products.length; i++) {
+        sessionCart.products.map(async (item) => {
+          if (
+            item.productId === existCart[0].products[i].product.toString() &&
+            existCart[0].products[i].size === item.size
+          ) {
+            await Cart.updateOne(
+              {
+                $and: [
+                  {
+                    orderby: existCart[0].orderby,
+                    "products.product": existCart[0].products[i].product,
+                  },
+                ],
+              },
+              {
+                $inc: {
+                  "products.$.count": item.count,
+                },
+              }
+            );
+            quantity++;
+          }
+          if (quantity === 0) {
+            console.log(
+              item.productId === existCart[0].products[i].product.toString(),
+              existCart[0].products[i].size === item.size
+            );
+            await Cart.updateOne(
+              {
+                $and: [
+                  {
+                    orderby: existCart[0].orderby,
+                    "products.product": existCart[0].products[i].product,
+                  },
+                ],
+              },
+              {
+                $push: {
+                  products: {
+                    count: item.count,
+                    size: item.size,
+                    title: item.title,
+                    price: item.price,
+                    image: item.image,
+                    product: item.productId,
+                  },
+                },
+              }
+            );
+          }
+        });
+      }
+      await Cart.updateOne(
+        { orderby: foundUser._id },
+        {
+          $inc: {
+            cartTotal: sessionCart.cartTotal,
+            countTotal: sessionCart.countTotal,
+          },
+        }
+      );
+      req.session.destroy();
+    }else{
+      const newCart = await Cart.create({
+        products: sessionCart.products,
+        cartTotal: sessionCart.cartTotal,
+        countTotal: sessionCart.countTotal,
+        orderby: foundUser._id,
+      });
+      await User.updateOne({ _id: foundUser._id }, { $set: { cart: newCart._id } });
+    }
+  }
   res.status(200).json({
-    msg: "Login success",
+    message: "Login success",
     data: {
-      id: findUser._id,
-      firstName: findUser.firstName,
-      lastName: findUser.lastName,
-      email: findUser.email,
-      phoneNumber: findUser.phoneNumber,
-      token: generateToken(findUser._id),
+      id: foundUser._id,
+      name: foundUser.name,
+      email: foundUser.email,
     },
   });
 });
 
-//GET handle refresh token
-export const handleRefreshToken = asyncHandler(async (req, res) => {
-  const cookie = req.cookies;
-  if (!cookie?.refreshToken) throw new Error("No Refresh Token In Cookies");
-  const refreshToken = cookie.refreshToken;
-  const user = await User.findOne({ refreshToken });
-  if (!user) throw new Error(" No Refresh token present in db or not matched");
-  jwt.verify(refreshToken, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-    if (err || user.id !== decoded.id) {
-      throw new Error("There is something wrong with refresh token");
-    }
-    const accessToken = generateToken(user?._id);
-    res.json({ accessToken });
-  });
+//GET get user Profile
+export const getUserProfile = asyncHandler(async (req, res) => {
+  const { _id } = req.userId;
+  const user = await User.findById(_id);
+  if (!user) {
+    res.status(404).json("please login");
+  }
+  res.json(user);
 });
 
 //GET logout
 export const logout = asyncHandler(async (req, res) => {
   const cookie = req.cookies;
   if (!cookie?.refreshToken) throw new Error("No Refresh Token In Cookies");
-  const refreshToken = cookie.refreshToken;
-  const user = await User.findOne({ refreshToken });
+  const refreshToken = cookie.jwt;
+  const user = await User.findOne({ refreshToken }).exec();
   if (!user) {
-    res.clearCookie("refreshToken",{httpOnly:true, secure:true});
+    res.clearCookie("jwt", { httpOnly: true, secure: true });
     return res.sendStatus(204);
   }
-  await User.findOneAndUpdate(refreshToken,{refreshToken:""})
-  res.clearCookie("refreshToken", {
+  await User.findOneAndUpdate(refreshToken, { refreshToken: "" });
+  res.clearCookie("jwt", {
     httpOnly: true,
     secure: true,
   });
@@ -116,4 +177,3 @@ export const getUser = asyncHandler(async (req, res) => {
     throw new Error(error);
   }
 });
-
