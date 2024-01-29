@@ -4,24 +4,34 @@ import cors from "cors";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
+import session from "express-session";
+import { default as connectMongoDBSession } from "connect-mongodb-session";
 import { createServer } from "http";
 import connectDB from "./config/db.js";
 import userRoutes from "./routes/authRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import blogRoutes from "./routes/blogRoutes.js";
 import attributesRoutes from "./routes/attributesRoutes.js";
-import cartRoutes from './routes/cartRoutes.js'
+import cartRoutes from "./routes/cartRoutes.js";
 import { notFound, errorHandler } from "./middlewares/errorHandler.js";
 const app = express();
-
+const MongoDBStore = connectMongoDBSession(session);
 const server = createServer(app);
+const store = new MongoDBStore({
+  uri: process.env.MONGO_URI,
+  collection: "sessions",
+});
 dotenv.config();
 connectDB();
 app.use(morgan("dev"));
 app.use(bodyParser.json({ limit: "50mb", extended: true }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
-app.use(cookieParser());
 app.use(cors({ origin: true, credentials: true }));
+app.use(
+  session({ secret: "my secret", resave: false, saveUninitialized: false , store:store })
+);
+app.use(cookieParser());
+
 //Routes
 app.use("/api/user", userRoutes);
 app.use("/api/product", productRoutes);
