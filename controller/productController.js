@@ -6,7 +6,7 @@ import cloudinary from "../utils/cloudinary.js";
 
 //POST create product
 export const createProduct = asyncHandler(async (req, res) => {
-  console.log(req.body)
+  console.log(req.body);
   const {
     title,
     image,
@@ -17,12 +17,12 @@ export const createProduct = asyncHandler(async (req, res) => {
     inventory,
     quantity,
     brand,
-    trending
+    trending,
   } = req.body;
   if (title) {
     req.body.slug = slugify(title);
-  } 
-  
+  }
+
   try {
     const result = await cloudinary.uploader.upload(image, {
       folder: "products",
@@ -30,10 +30,10 @@ export const createProduct = asyncHandler(async (req, res) => {
 
     const newProduct = await Product.create({
       title,
-      category, 
+      category,
       subcategory,
-      price, 
-      description, 
+      price,
+      description,
       inventory,
       brand,
       quantity,
@@ -41,39 +41,40 @@ export const createProduct = asyncHandler(async (req, res) => {
         public_id: result.public_id,
         url: result.secure_url,
       },
-      slug: req.body.slug, 
-      trending
+      slug: req.body.slug,
+      trending,
     });
     res.json(newProduct);
-  } catch (error) { 
+  } catch (error) {
     console.log(error);
-  }   
-});  
-
-
+  }
+});
 
 //GET get all products
 export const getProducts = asyncHandler(async (req, res) => {
   try {
     const queryObj = { ...req.query };
-    let prods = await Product.find();
-    res.json(prods); 
 
-    //Filtering 
+    //Filtering
+    const excludeFields = ["page", "sort", "limit", "fields"];
+    excludeFields.forEach((el) => delete queryObj[el]);
+    let queryStr = JSON.stringify(queryObj);
 
-    // const excludeFields = ["page", "sort", "limit", "fields"];
-    // excludeFields.forEach((el) => delete queryObj[el]);
-    // let queryStr = JSON.stringify(queryObj);
-    // queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
-    // let query = Product.find(JSON.parse(queryStr));
+    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
+    let query = Product.find(JSON.parse(queryStr));
 
-    // //Sorting
-    // if (req.query.sort) {
-    //   const sortBy = req.query.sort.split(",").join(" ");
-    //   query.sort(sortBy);
-    // } else {
-    //   query = query.sort("-createdAt");
-    // }
+    //Sorting
+    if (req.query.sort === "cheapest") {
+      query.sort("price");
+    } else if (req.query.sort === "most_expensive") {
+      query.sort("-price");
+    }else{
+      query.sort('-createdAt')
+    }
+
+    const product = await query;
+    res.json(product);
+
 
     // //limiting the fields
     // if (req.query.fields) {
@@ -100,23 +101,23 @@ export const getProducts = asyncHandler(async (req, res) => {
 
 //GET get product
 export const getProduct = asyncHandler(async (req, res) => {
-  const {id} = req.params
+  const { id } = req.params;
   try {
-    const findProduct = await Product.findOne({slug:id});
+    const findProduct = await Product.findOne({ slug: id });
     res.json(findProduct);
   } catch (error) {
-    throw new Error(error); 
+    throw new Error(error);
   }
 });
 
 //DELETE delete product
-export const deleteProduct = asyncHandler(async(req,res) =>{
-   const { id } = req.params;
-   console.log(req.params)
+export const deleteProduct = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  console.log(req.params);
   try {
     // const findProduct = await Product.findOneAndDelete({slug:id});
     // res.json(findProduct);
   } catch (error) {
-    throw new Error(error)}
-
-})
+    throw new Error(error);
+  }
+});
