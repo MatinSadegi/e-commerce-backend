@@ -31,14 +31,16 @@ export const loginUser = asyncHandler(async (req, res) => {
   if (!foundUser) {
     throw new Error("User Not Found");
   }
+  
   const validPassword = await bcrypt.compare(password, foundUser.password);
+
   if (!validPassword) {
     throw new Error("invalid password");
   }
   const newRefreshToken = generateRefreshToken(foundUser?._id);
   foundUser.refreshToken = newRefreshToken;
   setCookie(foundUser._id, res);
-  await foundUser.save();
+  await foundUser.save(); 
   const existCart = await Cart.find({ orderby: foundUser._id });
   let quantity = 0;
   const sessionCart = req.session.cart;
@@ -68,11 +70,10 @@ export const loginUser = asyncHandler(async (req, res) => {
               }
             );
           }
-          console.log(quantity);
         });
       }
       if (quantity === 0) {
-        console.log(quantity);
+
         await Cart.updateOne(
           {
             $and: [
@@ -107,6 +108,7 @@ export const loginUser = asyncHandler(async (req, res) => {
       );
       req.session.destroy();
     } else {
+      console.log(sessionCart)
       const newCart = await Cart.create({
         products: sessionCart.products,
         cartTotal: sessionCart.cartTotal,
