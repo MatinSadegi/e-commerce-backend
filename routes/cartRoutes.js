@@ -9,6 +9,6 @@ const router = express.Router();
 
 router.get("/",checkUser, getCart);
 router.post("/add-to-cart",checkUser,addToCart);
-router.post("/remove", removeFromCart);
+router.post("/remove",checkUser, removeFromCart);
 
 export default router;

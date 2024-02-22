@@ -49,7 +49,7 @@ export const addToCart = asyncHandler(async (req, res) => {
       if (alreadyExistCart) {
         for (let i = 0; i < alreadyExistCart.products.length; i++) {
           if (
-            alreadyExistCart.products[i].product.toString() === id &&
+            alreadyExistCart.products[i].productId.toString() === id &&
             alreadyExistCart.products[i].size === size
           ) {
             await Cart.updateOne(
@@ -57,7 +57,8 @@ export const addToCart = asyncHandler(async (req, res) => {
                 $and: [
                   {
                     orderby: user,
-                    "products.product": alreadyExistCart.products[i].product,
+                    "products.productId":
+                      alreadyExistCart.products[i].productId,
                   },
                 ],
               },
@@ -77,7 +78,7 @@ export const addToCart = asyncHandler(async (req, res) => {
             { orderby: user },
             {
               $push: {
-                products: { product: id, count, size, title, image, price },
+                products: { productId: id, count, size, title, image, price },
               },
               $inc: { cartTotal: price * count, countTotal: count },
             }
@@ -130,19 +131,33 @@ export const getCart = asyncHandler(async (req, res) => {
 
 //POST remove product from  cart
 export const removeFromCart = asyncHandler(async (req, res) => {
-  const { _id } = req.userId;
-  const { id } = req.body;
-  const cart = await Cart.findOne({ orderby: _id });
-  const currentProduct = cart.products.filter(
-    (item) => item._id.toString() === id
-  )[0];
-  const { price } = await Product.findById(currentProduct.product);
-  const newCart = await Cart.updateOne(
-    { orderby: _id },
-    {
-      $set: { cartTotal: cart.cartTotal - price * currentProduct.count },
-      $pull: { products: currentProduct },
+  const { id, size } = req.body;
+  const user = req.userId;
+  if (!user) {
+    const newSessionCart = req.session.cart.products.filter(
+      (item) => !(item.productId === id && item.size === size)
+    );
+    res.json(newSessionCart);
+  } else {
+    const cart = await Cart.findOne({ orderby: user });
+    const currentProduct = cart.products.filter(
+      (item) => item.productId.toString() === id && item.size === size
+    )[0];
+    const { price } = await Product.findById(currentProduct.productId);
+    try {
+      const newCart = await Cart.updateOne(
+        { orderby: user },
+        {
+          $inc: {
+            countTotal: -currentProduct.count,
+            cartTotal: -(price * currentProduct.count),
+          },
+          $pull: { products: currentProduct },
+        }
+      );
+      res.send(newCart);
+    } catch (error) {
+      console.log(error)
     }
-  );
-  res.send(newCart);
+  }
 });
