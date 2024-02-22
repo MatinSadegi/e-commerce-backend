@@ -54,27 +54,40 @@ export const createProduct = asyncHandler(async (req, res) => {
 export const getProducts = asyncHandler(async (req, res) => {
   try {
     const queryObj = { ...req.query };
-
+    const keys = Object.keys(queryObj);
+    let newObj = {};
+    keys.map((item) => {
+      console.log(item)
+      if (item === "price") {
+        newObj[item] = queryObj[item];
+      }else{
+        newObj[item] = queryObj[item].split(",");
+      }
+    });
+    keys.forEach((item) => {
+      if (queryObj[item] === "") {
+        delete newObj[item];
+      }
+    });
     //Filtering
     const excludeFields = ["page", "sort", "limit", "fields"];
-    excludeFields.forEach((el) => delete queryObj[el]);
-    let queryStr = JSON.stringify(queryObj);
-
+    excludeFields.forEach((el) => delete newObj[el]);
+    let queryStr = JSON.stringify(newObj);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
-    let query = Product.find(JSON.parse(queryStr));
+    const parsedQueries = JSON.parse(queryStr);
+    let query = Product.find(parsedQueries);
 
     //Sorting
     if (req.query.sort === "cheapest") {
       query.sort("price");
-    } else if (req.query.sort === "most_expensive") {
+    } else if (req.query.sort === "most expensive") {
       query.sort("-price");
-    }else{
-      query.sort('-createdAt')
+    } else {
+      query.sort("-createdAt");
     }
 
-    const product = await query;
-    res.json(product);
-
+    // const product = await query;
+    // res.json(product);
 
     // //limiting the fields
     // if (req.query.fields) {
@@ -92,8 +105,8 @@ export const getProducts = asyncHandler(async (req, res) => {
     //   const productCount = await Product.countDocuments();
     //   if (skip >= productCount) throw new Error("This Page does not exists");
     // }
-    // const product = await query;
-    // res.json(product);
+    const product = await query;
+    res.json(product);
   } catch (error) {
     throw new Error(error);
   }
