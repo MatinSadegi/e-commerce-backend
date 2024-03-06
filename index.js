@@ -14,6 +14,7 @@ import blogRoutes from "./routes/blogRoutes.js";
 import attributesRoutes from "./routes/attributesRoutes.js";
 import couponRoutes from './routes/couponRoutes.js'
 import cartRoutes from "./routes/cartRoutes.js";
+import orderRoutes from './routes/orderRoutes.js'
 import { notFound, errorHandler } from "./middlewares/errorHandler.js";
 const app = express();
 const MongoDBStore = connectMongoDBSession(session);
@@ -39,6 +40,7 @@ app.use("/api/product", productRoutes);
 app.use("/api/blog", blogRoutes);
 app.use("/api/attributes", attributesRoutes); 
 app.use("/api/cart", cartRoutes);
+app.use("/api/order", orderRoutes);
 app.use("/api/coupon", couponRoutes);
 
 app.use("/", (req, res) => {
