@@ -86,7 +86,7 @@ export const addToCart = asyncHandler(async (req, res) => {
         }
       } else {
         const newCart = await Cart.create({
-          products: { product: id, count, size, title, image, price },
+          products: { productId: id, count, size, title, image, price },
           cartTotal: price * count,
           countTotal: count,
           orderby: user,
@@ -99,6 +99,8 @@ export const addToCart = asyncHandler(async (req, res) => {
     }
   }
 });
+
+export const increaseProduct = asyncHandler(async (req, res) => {});
 
 //GET get user cart
 export const getCart = asyncHandler(async (req, res) => {
@@ -131,33 +133,67 @@ export const getCart = asyncHandler(async (req, res) => {
 
 //POST remove product from  cart
 export const removeFromCart = asyncHandler(async (req, res) => {
-  const { id, size } = req.body;
+  const { id, size, count } = req.body;
   const user = req.userId;
+  const { price } = await Product.findById(id);
   if (!user) {
-    const newSessionCart = req.session.cart.products.filter(
+    let newSessionCart = req.session.cart.products.filter(
       (item) => !(item.productId === id && item.size === size)
     );
-    res.json(newSessionCart);
+    const currentProduct = req.session.cart.products.filter(
+      (item) => item.productId === id && item.size === size
+    );
+    if (currentProduct[0].count === count) {
+      req.session.cart = {
+        products: newSessionCart,
+        countTotal: req.session.cart.countTotal - count,
+        cartTotal: req.session.cart.cartTotal - count * price,
+      };
+    } else {
+      if (currentProduct[0].count > 1) {
+        const productAfterIncrement = {
+          ...currentProduct[0],
+          count: currentProduct[0].count - count,
+        };
+        const products = [...newSessionCart, productAfterIncrement];
+        req.session.cart = {
+          products: products,
+          countTotal: req.session.cart.countTotal - count,
+          cartTotal: req.session.cart.cartTotal - count * price,
+        };
+      }
+    }
+
+    // if (!newSessionCart.length) {
+    //   req.session.destroy()
+    // } else {
+    //   req.session.cart = {
+    //     products: newSessionCart,
+    //     countTotal: req.session.cart.countTotal - count,
+    //     cartTotal: req.session.cart.cartTotal - count * price,
+    //   };
+    // }
+    res.status(200).send("The product was removed from the cart");
   } else {
     const cart = await Cart.findOne({ orderby: user });
     const currentProduct = cart.products.filter(
       (item) => item.productId.toString() === id && item.size === size
     )[0];
-    const { price } = await Product.findById(currentProduct.productId);
+
     try {
       const newCart = await Cart.updateOne(
         { orderby: user },
         {
           $inc: {
-            countTotal: -currentProduct.count,
-            cartTotal: -(price * currentProduct.count),
+            countTotal: -count,
+            cartTotal: -(price * count),
           },
           $pull: { products: currentProduct },
         }
       );
-      res.send(newCart);
+      res.status(200).send("The product was removed from the cart");
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
   }
 });

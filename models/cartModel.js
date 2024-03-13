@@ -25,6 +25,7 @@ const cartSchema = new mongoose.Schema(
     },
     cartTotal: { type: Number },
     countTotal: { type: Number },
+    discount: { type: Number },
   },
   {
     timestamps: true,

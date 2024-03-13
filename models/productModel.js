@@ -9,6 +9,8 @@ const productSchema = new mongoose.Schema(
     category: { type: String, required: true },
     subcategory: { type: String, required: true },
     brand: { type: String, required: true },
+    color: { type: String, required: true },
+    gender: { type: String, required: true },
     quantity: {
       sm: Number,
       md: Number,
@@ -19,11 +21,10 @@ const productSchema = new mongoose.Schema(
     trending: { type: Boolean, required: true },
 
     sold: { type: Number, default: 0 },
-    image: 
-      {
-        public_id: String,
-        url: String,
-      },
+    image: {
+      public_id: String,
+      url: String,
+    },
     ratings: [
       {
         star: Number,

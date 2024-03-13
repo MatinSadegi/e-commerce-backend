@@ -57,13 +57,15 @@ export const getProducts = asyncHandler(async (req, res) => {
     const keys = Object.keys(queryObj);
     let newObj = {};
     keys.map((item) => {
-      console.log(item)
       if (item === "price") {
         newObj[item] = queryObj[item];
-      }else{
+      } else if (item === "size") {
+        newObj['quantity'] = queryObj[item].split(",");
+      } else {
         newObj[item] = queryObj[item].split(",");
       }
     });
+    console.log(newObj, queryObj)
     keys.forEach((item) => {
       if (queryObj[item] === "") {
         delete newObj[item];
@@ -73,8 +75,10 @@ export const getProducts = asyncHandler(async (req, res) => {
     const excludeFields = ["page", "sort", "limit", "fields"];
     excludeFields.forEach((el) => delete newObj[el]);
     let queryStr = JSON.stringify(newObj);
+    console.log(queryStr);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
     const parsedQueries = JSON.parse(queryStr);
+
     let query = Product.find(parsedQueries);
 
     //Sorting
