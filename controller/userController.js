@@ -31,7 +31,7 @@ export const loginUser = asyncHandler(async (req, res) => {
   if (!foundUser) {
     throw new Error("User Not Found");
   }
-  
+
   const validPassword = await bcrypt.compare(password, foundUser.password);
 
   if (!validPassword) {
@@ -40,7 +40,7 @@ export const loginUser = asyncHandler(async (req, res) => {
   const newRefreshToken = generateRefreshToken(foundUser?._id);
   foundUser.refreshToken = newRefreshToken;
   setCookie(foundUser._id, res);
-  await foundUser.save(); 
+  await foundUser.save();
   const existCart = await Cart.find({ orderby: foundUser._id });
   let quantity = 0;
   const sessionCart = req.session.cart;
@@ -50,7 +50,7 @@ export const loginUser = asyncHandler(async (req, res) => {
       for (let i = 0; i < existCart[0].products.length; i++) {
         sessionCart.products.map(async (item) => {
           if (
-            item.productId === existCart[0].products[i].product.toString() &&
+            item.productId === existCart[0].products[i].productId.toString() &&
             existCart[0].products[i].size === item.size
           ) {
             quantity++;
@@ -73,13 +73,12 @@ export const loginUser = asyncHandler(async (req, res) => {
         });
       }
       if (quantity === 0) {
-
         await Cart.updateOne(
           {
             $and: [
               {
                 orderby: existCart[0].orderby,
-                "products.product": existCart[0].products[i].product,
+                "products.product": existCart[0].products[i].productId,
               },
             ],
           },
@@ -108,7 +107,7 @@ export const loginUser = asyncHandler(async (req, res) => {
       );
       req.session.destroy();
     } else {
-      console.log(sessionCart)
+      console.log(sessionCart);
       const newCart = await Cart.create({
         products: sessionCart.products,
         cartTotal: sessionCart.cartTotal,
@@ -134,14 +133,10 @@ export const loginUser = asyncHandler(async (req, res) => {
 
 //GET get user Profile
 export const getUserProfile = asyncHandler(async (req, res) => {
+  console.log("first");
   const user = req.userId;
-
-  if (!user) {
-    res.status(404).json("please login");
-  } else {
-    const userFound = await User.findById(user._id);
-    res.json(userFound);
-  }
+  const userFound = await User.findById(user._id);
+  res.json(userFound);
 });
 
 //GET logout
@@ -179,6 +174,29 @@ export const getUser = asyncHandler(async (req, res) => {
   try {
     const user = await User.findById(id);
     res.status(200).json({ user });
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+//POST add new address
+export const addNewAddress = asyncHandler(async (req, res) => {
+  const { city, name, houseNumber, streetName, phoneNumber } = req.body;
+  const userId = req.userId;
+  if (
+    city === "" ||
+    name === "" ||
+    houseNumber === "" ||
+    streetName === "" ||
+    phoneNumber === ""
+  ) {
+    res.status(401).send("please complete all fields");
+    return;
+  }
+  try {
+    await User.updateOne({ _id: userId }, { $push: { addresses: req.body } });
+    res.status(200).send("new address added");
+    console.log(req.body);
   } catch (error) {
     throw new Error(error);
   }

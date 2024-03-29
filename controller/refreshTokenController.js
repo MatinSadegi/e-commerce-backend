@@ -9,7 +9,7 @@ export const handleRefreshToken = asyncHandler(async (req, res) => {
   const refreshToken = cookies.refreshToken;
   res.clearCookie("refreshToken", {
     httpOnly: true,
-    secure: true,
+    secure: true, 
     sameSite: "none",
   });
   const foundUser = await User.findOne({ refreshToken });

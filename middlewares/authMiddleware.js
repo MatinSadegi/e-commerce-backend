@@ -8,7 +8,7 @@ export const protect = asyncHandler(async (req, res, next) => {
     res.status(401).send({ message: "Not authorized, no token" });
     return;
   }
-  try {
+  try { 
     const decodedData = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
     const user = await User.findById(decodedData?.id);
     req.userId = user?._id;
