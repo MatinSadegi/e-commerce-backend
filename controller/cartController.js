@@ -151,11 +151,11 @@ export const removeFromCart = asyncHandler(async (req, res) => {
       };
     } else {
       if (currentProduct[0].count > 1) {
-        const productAfterIncrement = {
+        const productAfterDecrement = {
           ...currentProduct[0],
           count: currentProduct[0].count - count,
         };
-        const products = [...newSessionCart, productAfterIncrement];
+        const products = [...newSessionCart, productAfterDecrement];
         req.session.cart = {
           products: products,
           countTotal: req.session.cart.countTotal - count,
@@ -179,19 +179,47 @@ export const removeFromCart = asyncHandler(async (req, res) => {
     const currentProduct = cart.products.filter(
       (item) => item.productId.toString() === id && item.size === size
     )[0];
-
     try {
-      const newCart = await Cart.updateOne(
-        { orderby: user },
-        {
-          $inc: {
-            countTotal: -count,
-            cartTotal: -(price * count),
+      if (currentProduct.count === count) {
+        await Cart.updateOne(
+          {
+            $and: [
+              {
+                orderby: user,
+                "products.productId": id,
+                "products.size": size,
+              },
+            ],
           },
-          $pull: { products: currentProduct },
-        }
-      );
-      res.status(200).send("The product was removed from the cart");
+          {
+            $inc: {
+              countTotal: -count,
+              cartTotal: -(price * count),
+            },
+            $pull: { products: currentProduct },
+          }
+        );
+      } else {
+        await Cart.updateOne(
+          {
+            $and: [
+              {
+                orderby: user,
+                "products.productId": id,
+                "products.size": size,
+              },
+            ],
+          },
+          {
+            $inc: {
+              "products.$.count": -count,
+              countTotal: -count,
+              cartTotal: -(price * count),
+            },
+          }
+        );
+      }
+        res.status(200).send("The product was removed from the cart");
     } catch (error) {
       console.log(error);
     }
