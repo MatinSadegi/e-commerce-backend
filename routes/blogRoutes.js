@@ -4,6 +4,6 @@ import { protect, isAdmin } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/", protect, isAdmin, createBlog);
+router.post("/", createBlog);
 
 export default router;

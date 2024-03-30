@@ -107,7 +107,6 @@ export const loginUser = asyncHandler(async (req, res) => {
       );
       req.session.destroy();
     } else {
-      console.log(sessionCart);
       const newCart = await Cart.create({
         products: sessionCart.products,
         cartTotal: sessionCart.cartTotal,
@@ -133,10 +132,10 @@ export const loginUser = asyncHandler(async (req, res) => {
 
 //GET get user Profile
 export const getUserProfile = asyncHandler(async (req, res) => {
-  console.log("first");
   const user = req.userId;
   const userFound = await User.findById(user._id);
   res.json(userFound);
+  
 });
 
 //GET logout
@@ -196,7 +195,6 @@ export const addNewAddress = asyncHandler(async (req, res) => {
   try {
     await User.updateOne({ _id: userId }, { $push: { addresses: req.body } });
     res.status(200).send("new address added");
-    console.log(req.body);
   } catch (error) {
     throw new Error(error);
   }

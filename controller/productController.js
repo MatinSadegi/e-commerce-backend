@@ -6,7 +6,7 @@ import cloudinary from "../utils/cloudinary.js";
 
 //POST create product
 export const createProduct = asyncHandler(async (req, res) => {
-  console.log(req.body);
+
   const {
     title,
     image,
@@ -65,7 +65,7 @@ export const getProducts = asyncHandler(async (req, res) => {
         newObj[item] = queryObj[item].split(",");
       }
     });
-    console.log(newObj, queryObj)
+
     keys.forEach((item) => {
       if (queryObj[item] === "") {
         delete newObj[item];
@@ -75,7 +75,6 @@ export const getProducts = asyncHandler(async (req, res) => {
     const excludeFields = ["page", "sort", "limit", "fields"];
     excludeFields.forEach((el) => delete newObj[el]);
     let queryStr = JSON.stringify(newObj);
-    console.log(queryStr);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
     const parsedQueries = JSON.parse(queryStr);
 
@@ -130,7 +129,6 @@ export const getProduct = asyncHandler(async (req, res) => {
 //DELETE delete product
 export const deleteProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  console.log(req.params);
   try {
     // const findProduct = await Product.findOneAndDelete({slug:id});
     // res.json(findProduct);

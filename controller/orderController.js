@@ -10,7 +10,6 @@ export const createOrder = expressAsyncHandler(async (req, res) => {
   const currentUser = await User.findById(user);
   try {
     let userCart = await Cart.findOne({ orderby: user });
-    console.log(userCart);
     if (!userCart || userCart?.products.length === 0) {
       res.status(404).send(" Cart is Empty");
     }
