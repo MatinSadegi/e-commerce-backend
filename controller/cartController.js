@@ -9,6 +9,7 @@ export const addToCart = asyncHandler(async (req, res) => {
   const { id, size, count } = req.body;
   const { price, title, image } = await Product.findById(id);
   const user = req.userId;
+  req.session.cookie.sameSite= 'none'
   let quantity = 0;
   if (!user) {
     if (req.session.cart) {

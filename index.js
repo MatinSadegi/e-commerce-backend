@@ -41,9 +41,9 @@ app.use(
       _expires: null,
       originalMaxAge: null,
       httpOnly: true,
-      secure: null,
+      secure: true,
       domain: null,
-      sameSite: null
+      sameSite: 'none'
     },
   })
 );
