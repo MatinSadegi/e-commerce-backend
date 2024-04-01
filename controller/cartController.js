@@ -7,7 +7,6 @@ import User from "../models/userModel.js";
 
 export const addToCart = asyncHandler(async (req, res) => {
   const { id, size, count } = req.body;
-  console.log("dasdsadasdasddasdsda")
   const { price, title, image } = await Product.findById(id);
   const user = req.userId;
   let quantity = 0;

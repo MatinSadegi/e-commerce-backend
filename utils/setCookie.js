@@ -4,7 +4,7 @@ import { generateRefreshToken } from "./refreshToken.js";
 export const cookieOptions = {
   maxAge: 1000 * 60 * 60 * 24 * 7, // would expire after 7 days
   httpOnly: true, // The cookie only accessible by the web server
-  sameSite: "None",
+  sameSite: "none",
   secure: true,
 };
 

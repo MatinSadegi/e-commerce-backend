@@ -30,7 +30,7 @@ app.use(bodyParser.json({ limit: "50mb", extended: true }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 app.use(cors({ origin: true, credentials: true }));
 app.use(
-  session({ secret: "my secret", resave: false, saveUninitialized: false , store:store })
+  session({ secret: "my secret", resave: false,  saveUninitialized: false , store:store })
 );
 app.use(cookieParser());
 
