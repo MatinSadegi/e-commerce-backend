@@ -35,7 +35,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     store: store,
-    cookie: { secure: true, sameSite: "none" },
+    cookie: { secure: true, sameSite: "none", httpOnly: true },
   })
 );
 app.use(cookieParser());
