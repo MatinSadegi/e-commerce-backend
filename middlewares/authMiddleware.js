@@ -15,7 +15,7 @@ export const protect = asyncHandler(async (req, res, next) => {
     console.log(decodedData)
     const user = await User.findById(decodedData?.id);
     req.userId = user?._id;
-    next();
+    next(); 
   } catch (error) {
     throw new Error("Not Authorized token expired , Please Login again");
   }
