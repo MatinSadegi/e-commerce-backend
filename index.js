@@ -12,9 +12,9 @@ import userRoutes from "./routes/authRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import blogRoutes from "./routes/blogRoutes.js";
 import attributesRoutes from "./routes/attributesRoutes.js";
-import couponRoutes from './routes/couponRoutes.js'
+import couponRoutes from "./routes/couponRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
-import orderRoutes from './routes/orderRoutes.js'
+import orderRoutes from "./routes/orderRoutes.js";
 import { notFound, errorHandler } from "./middlewares/errorHandler.js";
 const app = express();
 const MongoDBStore = connectMongoDBSession(session);
@@ -30,7 +30,13 @@ app.use(bodyParser.json({ limit: "50mb", extended: true }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 app.use(cors({ origin: true, credentials: true }));
 app.use(
-  session({ secret: "my secret", resave: false,  saveUninitialized: false , store:store })
+  session({
+    secret: "my secret",
+    resave: false,
+    saveUninitialized: false,
+    store: store,
+    cookie: { secure: true, sameSite: "none" },
+  })
 );
 app.use(cookieParser());
 
@@ -38,7 +44,7 @@ app.use(cookieParser());
 app.use("/api/user", userRoutes);
 app.use("/api/product", productRoutes);
 app.use("/api/blog", blogRoutes);
-app.use("/api/attributes", attributesRoutes); 
+app.use("/api/attributes", attributesRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/order", orderRoutes);
 app.use("/api/coupon", couponRoutes);
