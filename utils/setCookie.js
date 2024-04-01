@@ -4,8 +4,8 @@ import { generateRefreshToken } from "./refreshToken.js";
 export const cookieOptions = {
   maxAge: 1000 * 60 * 60 * 24 * 7,
   httpOnly: true, // The cookie only accessible by the web server
-  sameSite: "production" ? "none" : "lax",
-  secure: false,
+  sameSite: "none",
+  secure: true,
 };
 
 export function setCookie(user, res) {

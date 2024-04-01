@@ -43,7 +43,7 @@ app.use(
       httpOnly: true,
       secure: null,
       domain: null,
-      sameSite: "production" ? "none" : null
+      sameSite: null
     },
   })
 );
