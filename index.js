@@ -29,16 +29,26 @@ app.use(morgan("dev"));
 app.use(bodyParser.json({ limit: "50mb", extended: true }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 app.use(cors({ origin: true, credentials: true }));
+
 app.use(
   session({
     secret: "my secret",
     resave: false,
     saveUninitialized: false,
     store: store,
-    cookie: { sameSite:'none' },
+    cookie: {
+      path: "/",
+      _expires: null,
+      originalMaxAge: null,
+      httpOnly: true,
+      secure: null,
+      domain: null,
+      sameSite: "production" ? "none" : null
+    },
   })
 );
 app.use(cookieParser());
+
 
 //Routes
 app.use("/api/user", userRoutes);
