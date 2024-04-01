@@ -13,7 +13,7 @@ export const addToCart = asyncHandler(async (req, res) => {
   let quantity = 0;
   if (!user) {
     if (req.session.cart) {
-      for (let i = 0; i < req.session.cart.products.length; i++) {
+      for (let i = 0; i < req.session.cart.products.length; i++) { 
         if (
           req.session.cart.products[i].productId === id &&
           req.session.cart.products[i].size === size
