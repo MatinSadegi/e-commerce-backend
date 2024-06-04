@@ -6,7 +6,6 @@ import cloudinary from "../utils/cloudinary.js";
 
 //POST create product
 export const createProduct = asyncHandler(async (req, res) => {
-
   const {
     title,
     image,
@@ -52,15 +51,18 @@ export const createProduct = asyncHandler(async (req, res) => {
 
 //GET get all products
 export const getProducts = asyncHandler(async (req, res) => {
-  try {
-    const queryObj = { ...req.query };
-    const keys = Object.keys(queryObj);
+  const queryObj = { ...req.query };
+  const keys = Object.keys(queryObj);
+  if (keys.length === 0) {
+    const products = await Product.find();
+    res.status(200).json(products);
+  } else {
     let newObj = {};
     keys.map((item) => {
       if (item === "price") {
         newObj[item] = queryObj[item];
       } else if (item === "size") {
-        newObj['quantity'] = queryObj[item].split(",");
+        newObj["quantity"] = queryObj[item].split(",");
       } else {
         newObj[item] = queryObj[item].split(",");
       }
@@ -89,29 +91,8 @@ export const getProducts = asyncHandler(async (req, res) => {
       query.sort("-createdAt");
     }
 
-    // const product = await query;
-    // res.json(product);
-
-    // //limiting the fields
-    // if (req.query.fields) {
-    //   const fields = req.query.fields.split(",").join(" ");
-    //   query = query.select(fields);
-    // } else {
-    //   query = query.select("-__v");
-    // }
-
-    // //pagination
-    // const page = req.query.page;
-    // const limit = req.query.limit;
-    // const skip = (page - 1) * limit;
-    // if (req.query.page) {
-    //   const productCount = await Product.countDocuments();
-    //   if (skip >= productCount) throw new Error("This Page does not exists");
-    // }
     const product = await query;
-    res.json(product);
-  } catch (error) {
-    throw new Error(error);
+    res.status(200).json(product);
   }
 });
 
