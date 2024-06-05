@@ -56,8 +56,8 @@ export const getProducts = asyncHandler(async (req, res) => {
   if (keys.length === 0) {
     const products = await Product.find();
     res.status(200).json(products);
-  } else {
-    let newObj = {};
+  } else { 
+    let newObj = {}; 
     keys.map((item) => {
       if (item === "price") {
         newObj[item] = queryObj[item];

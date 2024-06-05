@@ -17,7 +17,7 @@ router.post("/register", createUser);
 router.post("/login", loginUser);
 router.get("/all-users", getUsers);
 router.get("/refresh", handleRefreshToken);
-router.get("logout", logout);
+router.post("/logout", logout);
 router.get("/profile",protect, getUserProfile);
 router.get("/:id", protect, isAdmin, getUser);
 router.post("/address", protect, addNewAddress);

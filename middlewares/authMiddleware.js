@@ -4,7 +4,7 @@ import User from "../models/userModel.js";
 
 export const protect = asyncHandler(async (req, res, next) => {
   const accessToken = req.cookies.accessToken;
-  console.log(accessToken);
+
   if (!accessToken) {
     res.status(401).send({ message: "Not authorized, no token" });
     return;
@@ -15,7 +15,7 @@ export const protect = asyncHandler(async (req, res, next) => {
       accessToken,
       process.env.ACCESS_TOKEN_SECRET
     );
-    console.log(decodedData);
+
     const user = await User.findById(decodedData?.id);
     req.userId = user?._id;
     next();

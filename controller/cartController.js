@@ -104,11 +104,9 @@ export const addToCart = asyncHandler(async (req, res) => {
 //GET get user cart
 export const getCart = asyncHandler(async (req, res) => {
   const user = req.userId;
-  console.log(req.session)
   try {
     if (!user) {
       const sessionCart = req.session.cart;
-      console.log(sessionCart)
       if (sessionCart) {
         res.status(201).json({
           products: sessionCart.products,

@@ -4,7 +4,7 @@ import User from "../models/userModel.js";
 import { generateToken } from "../utils/generateToken.js";
 import { validateMongoDbId } from "../utils/validateMongodbId.js";
 import { generateRefreshToken } from "../utils/refreshToken.js";
-import { setCookie } from "../utils/setCookie.js";
+import { setCookie, cookieOptions } from "../utils/setCookie.js";
 import Cart from "../models/cartModel.js";
 
 //POST create user
@@ -15,11 +15,12 @@ export const createUser = asyncHandler(async (req, res) => {
     throw new Error("User Already Exists");
   }
   const hashedPassword = bcrypt.hashSync(password, 12);
-  await User.create({
+  const newUser = await User.create({
     name,
     email,
     password: hashedPassword,
   });
+  setCookie(newUser._id, res);
 
   res.status(200).json({ message: "Account created" });
 });
@@ -39,7 +40,8 @@ export const loginUser = asyncHandler(async (req, res) => {
   }
   const newRefreshToken = generateRefreshToken(foundUser?._id);
   foundUser.refreshToken = newRefreshToken;
-  setCookie(foundUser._id, res);
+  res.cookie("accessToken", generateToken(foundUser?._id), cookieOptions);
+  res.cookie("refreshToken", newRefreshToken, cookieOptions);
   await foundUser.save();
   const existCart = await Cart.find({ orderby: foundUser._id });
   let quantity = 0;
@@ -126,7 +128,7 @@ export const loginUser = asyncHandler(async (req, res) => {
       id: foundUser._id,
       name: foundUser.name,
       email: foundUser.email,
-    },
+    }, 
   });
 });
 
@@ -135,25 +137,31 @@ export const getUserProfile = asyncHandler(async (req, res) => {
   const user = req.userId;
   const userFound = await User.findById(user._id);
   res.json(userFound);
-  
 });
 
 //GET logout
 export const logout = asyncHandler(async (req, res) => {
   const cookie = req.cookies;
   if (!cookie?.refreshToken) throw new Error("No Refresh Token In Cookies");
-  const refreshToken = cookie.jwt;
-  const user = await User.findOne({ refreshToken }).exec();
+  const refreshToken = cookie.refreshToken;
+  const user = await User.findOne({ refreshToken });
   if (!user) {
-    res.clearCookie("jwt", { httpOnly: true, secure: true });
+    res.clearCookie("accessToken", { httpOnly: true, secure: true });
+    res.clearCookie("refreshToken", { httpOnly: true, secure: true });
     return res.sendStatus(204);
+  } else {
+
+
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: true,
+    });
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: true,
+    });
+    res.sendStatus(204);
   }
-  await User.findOneAndUpdate(refreshToken, { refreshToken: "" });
-  res.clearCookie("jwt", {
-    httpOnly: true,
-    secure: true,
-  });
-  res.sendStatus(204);
 });
 
 //GET get all users
